@@ -2,11 +2,7 @@
 
 namespace NetInfer;
 
-internal record struct GgufHeader(
-    uint Magic,
-    uint Version,
-    ulong NumTensors,
-    ulong NumKV);
+internal record struct GgufHeader(uint Magic, uint Version, ulong NumTensors, ulong NumKV);
 
 public enum GgufType : uint
 {
@@ -192,11 +188,7 @@ public enum TensorType : uint
     MXFP4 = 39,
 }
 
-record TensorInfo(
-    string Name,
-    ulong[] Dimensions,
-    TensorType Type,
-    ulong Offset)
+record TensorInfo(string Name, ulong[] Dimensions, TensorType Type, ulong Offset)
 {
     public static TensorInfo[] ReadTensorInfos(BinaryReader reader, ulong numTensors)
     {
@@ -217,10 +209,7 @@ record TensorInfo(
     }
 }
 
-internal record GgufFile(
-    GgufHeader Header, 
-    GgufMetadata[] Metadata,
-    TensorInfo[] TensorsInfos)
+internal record GgufFile(GgufHeader Header, GgufMetadata[] Metadata, TensorInfo[] TensorsInfos, Dictionary<string, Tensor> Tensors)
 {
     public static GgufFile Load(string path)
     {
@@ -234,7 +223,54 @@ internal record GgufFile(
         var header = new GgufHeader(magic, version, numTensors, numKV);
         var metadata = LoadMetadata(reader, numKV);
         var tensors = TensorInfo.ReadTensorInfos(reader, numTensors);
-        return new GgufFile(header, metadata, tensors);
+        var tensorDict = LoadTensors(reader, tensors);
+        return new GgufFile(header, metadata, tensors, tensorDict);
+    }
+
+    private static ulong SizeFromTensorType(TensorType type) => type switch
+    {
+        TensorType.Float32 => 4,
+        TensorType.Float16 => 2,
+        TensorType.Q8_0 => 1,
+        TensorType.Q8_1 => 1,
+        TensorType.Q8_K => 1,
+        TensorType.Int8 => 1,
+        TensorType.Int16 => 2,
+        TensorType.Int32 => 4,
+        TensorType.Int64 => 8,
+        TensorType.Float64 => 8,
+        TensorType.BFloat16 => 2,
+        _ => throw new NotSupportedException($"Unsupported tensor type: {type}"),
+    };
+
+    public static Dictionary<string, Tensor> LoadTensors(BinaryReader reader, TensorInfo[] tensorInfos)
+    {
+        var result = new Dictionary<string, Tensor>();
+        foreach (var tensorInfo in tensorInfos)
+        {
+            ulong valueSize = SizeFromTensorType(tensorInfo.Type);
+            ulong stride = valueSize;
+            var strides = new ulong[tensorInfo.Dimensions.Length];
+            for (int i = tensorInfo.Dimensions.Length - 1; i >= 0; i--)
+            {
+                var dim = tensorInfo.Dimensions[i];
+                strides[i] = stride;
+                stride *= dim;
+            }
+            var data = reader.ReadBytes((int)stride);
+
+            var tensor = new Tensor
+            {
+                Data = data,
+                Offset = 0,
+                Shape = tensorInfo.Dimensions,
+                Stride = strides,
+                Type = tensorInfo.Type,
+                ValueSize = valueSize,
+            };
+            result[tensorInfo.Name] = tensor;
+        }
+        return result;
     }
 
     private static GgufMetadata[] LoadMetadata(BinaryReader reader, ulong numKV)
