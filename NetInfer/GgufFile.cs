@@ -23,6 +23,7 @@ public enum GgufType : uint
 
 abstract record GgufMetadata(string Key)
 {
+    public abstract string GetValueAsString();
 
     public static GgufMetadata ReadMetadata(BinaryReader reader)
     {
@@ -130,27 +131,66 @@ abstract record GgufMetadata(string Key)
     }
 }
 
-record GgufMetadataUint8(string Key, byte Value) : GgufMetadata(Key);
-record GgufMetadataInt8(string Key, sbyte Value) : GgufMetadata(Key);
-record GgufMetadataUint16(string Key, ushort Value) : GgufMetadata(Key);
-record GgufMetadataInt16(string Key, short Value) : GgufMetadata(Key);
-record GgufMetadataUint32(string Key, uint Value) : GgufMetadata(Key);
-record GgufMetadataInt32(string Key, int Value) : GgufMetadata(Key);
-record GgufMetadataUint64(string Key, ulong Value) : GgufMetadata(Key);
-record GgufMetadataInt64(string Key, long Value) : GgufMetadata(Key);
-record GgufMetadataBool(string Key, bool Value) : GgufMetadata(Key);
-record GgufMetadataFloat32(string Key, float Value) : GgufMetadata(Key);
-record GgufMetadataFloat64(string Key, double Value) : GgufMetadata(Key);
+record GgufMetadataUint8(string Key, byte Value) : GgufMetadata(Key)
+{
+    override public string GetValueAsString() => Value.ToString();
+}
+
+record GgufMetadataInt8(string Key, sbyte Value) : GgufMetadata(Key)
+{
+    override public string GetValueAsString() => Value.ToString();
+}
+record GgufMetadataUint16(string Key, ushort Value) : GgufMetadata(Key)
+{
+    override public string GetValueAsString() => Value.ToString();
+}
+record GgufMetadataInt16(string Key, short Value) : GgufMetadata(Key)
+{
+    override public string GetValueAsString() => Value.ToString();
+}
+record GgufMetadataUint32(string Key, uint Value) : GgufMetadata(Key)
+{
+    override public string GetValueAsString() => Value.ToString();
+}
+record GgufMetadataInt32(string Key, int Value) : GgufMetadata(Key)
+{
+    override public string GetValueAsString() => Value.ToString();
+}
+record GgufMetadataUint64(string Key, ulong Value) : GgufMetadata(Key)
+{
+    override public string GetValueAsString() => Value.ToString();
+}
+record GgufMetadataInt64(string Key, long Value) : GgufMetadata(Key)
+{
+    override public string GetValueAsString() => Value.ToString();
+}
+record GgufMetadataBool(string Key, bool Value) : GgufMetadata(Key)
+{
+    override public string GetValueAsString() => Value.ToString();
+}
+record GgufMetadataFloat32(string Key, float Value) : GgufMetadata(Key)
+{
+    override public string GetValueAsString() => Value.ToString();
+}
+record GgufMetadataFloat64(string Key, double Value) : GgufMetadata(Key)
+{
+    override public string GetValueAsString() => Value.ToString();
+}
 record GgufMetadataArray<T>(string Key, GgufType Type, T[] Values) : GgufMetadata(Key)
 {
-    private const int MAX_DIPLAYED = 5;
-    public override string ToString() => Values.Length switch
+    private const int MAX_DIPLAYED = 10;
+    override public string GetValueAsString() => Values.Length switch
     {
-        > 5 => $"GgufMetadataArray<{Type}>({Key}, [{string.Join(", ", Values[..MAX_DIPLAYED])}, ... {Values.Length - MAX_DIPLAYED} more])",
-        _ => $"GgufMetadataArray<{Type}>({Key}, [{string.Join(", ", Values)}])",
+        > 5 => $"[{string.Join(", ", Values[..MAX_DIPLAYED])}, ... {Values.Length - MAX_DIPLAYED} more]",
+        _ => $"[{string.Join(", ", Values)}]",
     };
+
+    public override string ToString() => $"GgufMetadataArray<{Type}>({Key}, [{GetValueAsString()}])";
 }
-record GgufMetadataString(string Key, string Value) : GgufMetadata(Key);
+record GgufMetadataString(string Key, string Value) : GgufMetadata(Key)
+{
+    override public string GetValueAsString() => Value.ToString();
+}
 
 public enum TensorType : uint
 {

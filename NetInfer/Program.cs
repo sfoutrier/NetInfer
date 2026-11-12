@@ -1,5 +1,6 @@
 
 using NetInfer.Tokenization;
+using System.Text;
 using Terminal.Gui.App;
 using Terminal.Gui.Drivers;
 using Terminal.Gui.Editor;
@@ -207,25 +208,36 @@ internal static class Program
 
     private static void ShowMetadata(IApplication app, Window window, GgufFile file, string path)
     {
-        string contents = file.Metadata.Length == 0
-            ? "No metadata entries."
-            : string.Join(Environment.NewLine, file.Metadata.Select(metadata => metadata.ToString()));
+        string contents;
+        if (file.Metadata.Length == 0)
+        {
+            contents = "No metadata entries.";
+        }
+        else
+        {
+            contents = string.Join(Environment.NewLine,
+                file.Metadata
+                    .Select(m => (m.Key, Value: m.GetValueAsString()))
+                    .OrderBy(kvp => kvp.Key)
+                    .Select(kvp => $"[{kvp.Key}]: {kvp.Value}"));
+        }
 
         ShowDetails(app, window, "Metadata", contents, file, path);
     }
 
     private static void ShowTensors(IApplication app, Window window, GgufFile file, string path)
     {
-        string contents = file.TensorsInfos.Length == 0
-            ? "No tensors found."
-            : string.Join(
-                Environment.NewLine,
-                file.TensorsInfos.Select(tensor => $"""
-                    Tensor: {tensor.Name}
-                      Type: {tensor.Type}
-                      Offset: {tensor.Offset}
-                      Dimensions: {string.Join(", ", tensor.Dimensions)}
-                    """));
+        string contents;
+        if (file.TensorsInfos.Length == 0)
+        {
+            contents = "No tensors found.";
+        }
+        else
+        {
+            contents = string.Join(Environment.NewLine,
+                file.TensorsInfos
+                    .Select(tensor => $"[{tensor.Name}]: {tensor.Type}  [{string.Join(", ", tensor.Dimensions)}]"));
+        }
 
         ShowDetails(app, window, "Tensors", contents, file, path);
     }

@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="NetInfer.Test/NetInfer.Test.csproj" Id="5fa6c4c1-03f7-42be-89a4-7ce1a85807eb" />
   <Project Path="NetInfer/NetInfer.csproj" />
 </Solution>
